@@ -40,10 +40,16 @@ Build
 pnpm stdio:build
 ```
 
-Run example:
+Run Pokemon example:
 
 ```sh
 pnpm stdio:client
+```
+
+Run MSSQL Database example:
+
+```sh
+pnpm stdio:mssql-client
 ```
 
 ## SSE Transport (Legacy)
