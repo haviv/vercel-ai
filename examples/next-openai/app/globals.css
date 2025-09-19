@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@source "../node_modules/streamdown/dist/index.js";
+
+/* Custom styles for Streamdown component */
+.streamdown-container {
+  @apply text-gray-900 dark:text-gray-100;
+}
+
+/* Ensure code blocks don't duplicate */
+.streamdown-container pre {
+  @apply !mb-4;
+}
+
+/* Style for code block containers */
+.streamdown-container pre code {
+  @apply !block !w-full;
+}
+
+/* Prevent prose styles from interfering */
+.streamdown-container * {
+  @apply !max-w-none;
+}
