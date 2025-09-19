@@ -38,21 +38,25 @@ export async function POST(req: Request) {
   console.log('=== DEBUGGING CONTEXT LENGTH ===');
   console.log('Total messages count:', messages.length);
   
-  // Only use the latest user message to prevent context buildup
-  const latestUserMessage = messages.filter((msg: any) => msg.role === 'user').pop();
-  const messagesToSend = latestUserMessage ? [latestUserMessage] : [];
+  // Filter to only user messages (questions) and take the most recent 20
+  const userMessages = messages.filter((msg: any) => msg.role === 'user');
+  const messagesToSend = userMessages.slice(-20); // Get last 20 user messages only
   
-  console.log('Latest user message:', JSON.stringify(latestUserMessage, null, 10));
-  console.log('Sending only the latest user input to prevent context buildup');
+  console.log('Total messages received:', messages.length);
+  console.log('Total user messages:', userMessages.length);
+  console.log('Sending only user questions (max 20 most recent)');
+  console.log('User messages to send:', messagesToSend.length);
   
   let contentSize = 0;
-  if (latestUserMessage?.parts) {
-    latestUserMessage.parts.forEach((part: any) => {
-      if (part.text) contentSize += part.text.length;
-    });
-  }
+  messagesToSend.forEach((message: any) => {
+    if (message.parts && Array.isArray(message.parts)) {
+      message.parts.forEach((part: any) => {
+        if (part.text) contentSize += part.text.length;
+      });
+    }
+  });
   
-  console.log('Latest message size:', contentSize, 'characters');
+  console.log('User messages size:', contentSize, 'characters');
   console.log('System prompt size:', systemPrompts.grcAssistant.length, 'characters');
   console.log('Total size:', contentSize + systemPrompts.grcAssistant.length, 'characters');
   console.log('Estimated tokens:', Math.ceil((contentSize + systemPrompts.grcAssistant.length) / 4));

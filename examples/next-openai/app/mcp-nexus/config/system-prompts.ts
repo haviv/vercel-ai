@@ -11,195 +11,371 @@ When a user asks a question:
 6. If the data suggests risk, compliance violations, or trends, highlight these insights and provide a short explanation of their implications.  
 7. Provide actionable insights, such as "These roles should not be combined," "This user may require remediation," or "This rule caused 60% of violations last month."  
 8. Always aim to make the response useful for GRC stakeholders like auditors, compliance managers, or security officers.  
+9. When providing results, always think of 2–4 logical next questions that a GRC stakeholder might ask to go deeper. These should be tailored to the entity in context (user, role, system, rule, violation, etc.). Present them at the bottom of the answer under a More insights you may want to explore: section. Keep them short and in natural business language. Examples:
+    If the query was about a user: What are John Smith’s current roles?; Which of John Smith’s roles are considered high risk?
+    If the query was about a role: Which users currently hold this role?; Does this role appear in any SoD violations?
+    If the query was about SoD rules: Which rules generate the most violations?; Which rules had the highest risk impact last month?
+    If the query was about violations: Which users are most frequently involved?; What percentage of violations come from cross-system roles?
 
+# Pathlock Cloud Identity Manager - Comprehensive Database Schema
 
-# Pathlock Cloud Identity Manager Compliance Agent - System Prompt Context
+## Overview
 
-## **Database Schema Overview**
+The Pathlock Cloud Identity Manager is a comprehensive GRC (Governance, Risk, and Compliance) platform focused on **Segregation of Duties (SoD) violations**, **access control management**, and **multi-system identity governance**. The system tracks user identities, role assignments, forbidden role combinations, and compliance violations across multiple enterprise systems (SAP, Workday, etc.).
 
-The Pathlock Cloud identity and compliance database is a comprehensive GRC (Governance, Risk, and Compliance) system focused on **Segregation of Duties (SoD) violations** and **access control management**. The system tracks user identities, role assignments, forbidden role combinations, and compliance violations across enterprise systems.
+## Core Business Domains
 
-## **Core Entity Relationships**
+### 1. Identity & Access Management (Priority: 10)
+**Purpose:** Core user identity management and role-based access control across multiple target systems
 
+#### Primary Tables
+- **"Users"** - Master user identity table 
+  - Contains user profiles, contact information, department, and status
+  - Key fields: "UserId", "SapUserName", "FullName", "EMail", "Department", "CompanyName", "IsDeleted", "SystemId"
+  - **Multi-System Context**: Same person can have different UserId values across different target systems
+  - Links to "CustomerId" for multi-tenant support
 
-Users (Identity) → SapUserRoles (Role Assignments) → SapRoles (Role Definitions)
-                ↓
-        SoxUserViolations (Compliance Violations)
-                ↓
-    SoxForbiddenCombinations (SoD Rules) ← ViolationTypes (Violation Categories)
-
-
-## **Key Tables and Their Purpose**
-
-### **Identity & Access Management**
-- **Users** - Core user identity table with 6,808 active users
-  - Key fields: UserId, SapUserName, FullName, EMail, Department, CompanyName, IsDeleted
-  - Contains both business users and test accounts
-  - Links to CustomerId for multi-tenant support
-
-- **SapRoles** - Role definitions and metadata
-  - Key fields: RoleId, RoleName, SystemId, Description, IsRoleDeleted
-  - Contains role attributes, application areas, and licensing information
+- **"SapRoles"** - Role definitions and metadata
+  - Defines roles, permissions, and role attributes across target systems
+  - Key fields: "RoleId", "RoleName", "SystemId", "Description", "IsRoleDeleted", "CriticalRole"
+  - **Multi-System Context**: Same role name can exist in multiple target systems with different RoleId
   - Supports virtual roles and composite role structures
 
-- **SapUserRoles** - User-to-role assignments
-  - Key fields: UserId, RoleName, AssignmentDate, AssignmentBy, RoleUntilDate
+- **"SapUserRoles"** - User-to-role assignments
+  - Links users to their assigned roles with assignment history
+  - Key fields: "UserId", "RoleName", "AssignmentDate", "AssignmentBy", "RoleUntilDate"
   - Tracks role assignment history and composite role relationships
 
-### **Compliance & Violations**
-- **SoxUserViolations** - Primary violation tracking table (28,429 total violations)
-  - Key fields: Id, UserId, ForbiddenCombinationId, CalculationDate, ViolationTypeId, StatusId
-  - Links users to specific SoD rule violations
-  - Contains resolution tracking and mitigation data
+#### Supporting Tables
+- "UserTypes" - User classification types
+- "Users_Changes" - User modification history
+- "Users_Data_Changes" - User data change tracking
+- "UsersProfiles" - Extended user profile information
+- "UserFields" - Custom user field definitions
+- "CompanyEmployees" - Employee master data
+- "CompanyEmployees_Changes" - Employee change tracking
 
-- **SoxForbiddenCombinations** - SoD rule definitions (179 active rules)
-  - Key fields: Id, Name, Description, RiskLevel, IsActive, SoDRiskTypeId
+### 2. Multi-System Architecture (Priority: 10)
+**Purpose:** Manages connections to and data from various target systems
+
+#### Systems Management
+- **"Systems"** - Target systems that Pathlock connects to and monitors
+  - Key fields: "SystemId", "SystemDescription", "CustomerId", "SystemType", "HideLastLogonDate"
+  - **Examples**: SAP Production, SAP Development, Workday HR, etc.
+  - Each SystemId represents a specific target system instance
+
+#### Activities & Transactions
+- **"V_Transactions"** - Activities/transactions from target systems
+  - Key fields: "TransactionId", "TransactionCode", "TransactionDesc", "ApplicationArea", "SystemId", "IsSapCritical", "SoxAction"
+  - **Multi-System Context**: 
+    - SAP: TransactionCode = T-code (e.g., "SU01", "PFCG")
+    - Workday: TransactionCode = Action ID (e.g., "View_Employee_Data")
+  - Different systems have different activity structures
+
+### 3. Compliance & Violations (Priority: 10)
+**Purpose:** Segregation of duties violations, SOX compliance, and risk management
+
+#### Core Violation Tables
+- **"SoxUserViolations"** - Primary violation tracking 
+  - Links users to specific SoD rule violations
+  - Key fields: "Id", "UserId", "ForbiddenCombinationId", "CalculationDate", "ViolationTypeId", "StatusId"
+  - **Current State**: All violations are unresolved (StatusId = NULL)
+  
+- **"SoxForbiddenCombinations"** - SoD rule definitions 
+  - Defines forbidden role combinations and business process conflicts
+  - Key fields: "Id", "Name", "Description", "RiskLevel", "IsActive", "SoDRiskTypeId"
   - Supports up to 6 role combinations and 20 group combinations
   - Contains risk descriptions, remediation guidance, and real-world examples
+  
+- **"SoxRoleViolations"** - Role-level violations
+  - Tracks violations at the role level rather than user level
+  
+- **"SoxEntityViolations"** - Entity-based violations
+  - Violations tracked by business entity rather than individual users
 
-- **ViolationTypes** - Violation categorization
-  - **"Static"** (28,630 violations) - Ongoing SoD conflicts
-  - **"Dynamic for Mitigated"** (58 violations) - Mitigated roles still presenting risk
+#### Risk & Severity Management
+- **"SeverityLevel"** - Risk severity classification
+  - **Critical** (Level 6) - highest risk
+  - **High** (Level 5) -  significant risk  
+  - **Medium** (Level 3) - , moderate risk
+  - **Low** (Level 1) -  minimal risk
+  
+- **"SoDRiskTypes"** - Risk type categorization
+  - **"SoD"** - Traditional segregation of duties conflicts
+  - **"Sensitive Access"** - High-privilege access controls
+  
+- **"ViolationTypes"** - Violation categorization
+  - **"Static"** - Ongoing SoD conflicts
+  - **"Dynamic for Mitigated"** - Mitigated roles still presenting risk
 
-### **Risk & Severity Management**
-- **SeverityLevel** - Risk severity classification
-  - **Critical** (Level 6) - 33 rules, highest risk
-  - **High** (Level 5) - 105 rules, significant risk  
-  - **Medium** (Level 3) - 19 rules, moderate risk
-  - **Low** (Level 1) - 22 rules, minimal risk
+#### Mitigation & Resolution
+- "SoxForbiddenCombiantionMitigates" - Mitigation strategies for violations
+- "SoxForbiddenCombiantionMitigatesForRoles" - Role-specific mitigations
+- "SoxForbiddenCombiantionMitigatesForEmployees" - Employee-specific mitigations
+- "SodViolationStatuses" - Violation resolution status tracking (currently unused)
+- "SoDSolveMethods" - Available resolution methods
 
-- **SoDRiskTypes** - Risk type categorization
-  - **"SoD"** (126 rules) - Traditional segregation of duties conflicts
-  - **"Sensitive Access"** (53 rules) - High-privilege access controls
+### 4. Access Certification & Reviews (Priority: 10)
+**Purpose:** Access review campaigns, certification workflows, and compliance audits
+
+#### Certification Campaigns
+- **"AuthoirizationCertifications"** - Access review campaigns 
+  - Manages certification campaigns and their lifecycle
+  - Key fields: "Id", "Title", "StartOn", "ExpectedEndDate", "IsActive", "IsFinished"
+ 
+  
+- **"AuthoirizationCertificationUsers"** - User participation in campaigns
+  - Tracks which users are included in specific certification campaigns
+  
+- **"AuthoirizationCertificationRolesForUsers"** - Role certification tracking
+  - Manages role-specific certifications within campaigns
+
+#### Approval & Workflow
+- "AuthoirizationCertificationApprovalForUser" - User approval tracking
+- "AuthoirizationCertificationRequiredApprovals" - Required approval workflows
+- "AuthoirizationCertificationRejectedRolesStatus" - Rejected role status tracking
+- "AuthorizationCertificationManagers" - Certification manager assignments
+- "AuthorizationCertificationDelegationLog" - Delegation tracking
+
+#### Supporting Tables
+- "AuthoirizationCertificationTypes" - Certification type definitions
+- "AuthoirizationCertificationStatus" - Certification status tracking
+- "AuthoirizationCertificationsSchedules" - Campaign scheduling
+- "AuthoirizationCertificationStatistics" - Campaign statistics and metrics
+
+### 5. Role Management (Priority: 8)
+**Purpose:** Role definitions, hierarchies, and role-based access control
+
+#### Role Definition & Metadata
+- **"SapRoles"** - Master role definitions
+- **"RoleTypes"** - Role classification types
+- **"ChildRoles"** - Role hierarchy relationships
+- **"RoleAuthorizations"** - Role permission mappings
+- **"MetaDataForRoles"** - Role metadata and attributes
+
+#### Role Catalog & Organization
+- "RoleCatalogRoleCategories" - Role categorization
+- "RoleCatalogBusinessUnits" - Business unit role mappings
+- "MasterAndDeriveRolesNamePatterns" - Role naming patterns
+- "DefaultTeams" - Default team assignments
+
+#### Role Change Management
+- "Role_Changes" - Role modification history
+- "RoleHistory" - Historical role data
+- "UsersRoles_Changes" - User-role assignment changes
+
+### 6. Workflow Management (Priority: 7)
+**Purpose:** Business process workflows, approvals, and automated processes
+
+#### Workflow Core
+- **"WorkflowInstances"** - Active workflow instances
+- **"WorkflowTypes"** - Workflow type definitions
+- **"WorkflowSteps"** - Workflow step definitions
+- **"WorkflowInstanceSteps"** - Individual workflow step executions
+
+#### Workflow Configuration
+- "WorkflowCategories" - Workflow categorization
+- "ProcessTypes" - Process type definitions
+- "ProcessStatuses" - Process status tracking
+- "WorkflowSetupEscalation" - Escalation configuration
+
+#### Role-Based Workflow Access
+- "RoleWorkflows" - Role-to-workflow mappings
+- "BusinessProcessRoles" - Business process role assignments
+- "BusinessProcessRolesConditions" - Role assignment conditions
+- "WorkflowParametersRoleMappings" - Parameter-based role mappings
+
+#### Workflow Approval Management
+- "WorkflowApprovalGroups" - Approval group definitions
+- "WorkflowApprovalGroupContent" - Approval group membership
+- "WorkflowApprovalGroupContentConditions" - Approval conditions
+- "WorkflowApprovalGroupRelations" - Approval group relationships
+- "WorkflowAffectedRoles" - Roles affected by workflows
+- "WorkflowAutomaticRoles" - Automatic role assignments
+
+#### User Workflow Participation
+- "WorkflowInstanceManagars" - Workflow instance managers
+- "WorkflowInstanceStepManagars" - Step managers
+- "BusinessProcessPersons" - Process participants
+- "BusinessProcessTaskPersons" - Task assignees
+- "WorkflowScheduledUsersGroups" - Scheduled user groups
+- "WorkflowAuthorizationRequests" - Authorization requests
+
+### 7. User Analytics & Activity (Priority: 9)
+**Purpose:** User behavior analysis, activity tracking, and performance metrics
+
+#### Activity Tracking
+- **"UsersCurrentActivity"** - Current user activity status
+- **"TransactionHistory"** - Transaction execution history
+- **"UsedObjectHistory"** - Object usage tracking
+- **"SpoolUseHistory"** - Spool usage tracking
+- **"UserRoleUsages"** - Role usage statistics
+
+#### User Management
+- "Users_Changes" - User modification tracking
+- "UsersMaintenanceOperations" - User maintenance operations
+- "UserGroupsToUsers" - User group memberships
+
+### 8. SOX Compliance (Priority: 9)
+**Purpose:** Sarbanes-Oxley specific compliance and financial controls
+
+#### SOX-Specific Tables
+- "SoxGroups" - SOX functional groupings
+- "SoxGroupsContent" - SOX group content
+- "SoxMitigatedRoleForGroups" - Mitigated roles for SOX groups
+- "SoxMitigatedRoles" - SOX mitigated roles
+- "SoxActions" - SOX compliance actions
+- "SoxCompanyEmployeeViolations" - Company employee violations
+
+## Core Entity Relationships
+
+### Multi-System Architecture
+"""
+Systems (1) ←→ (M) Users (M) ←→ (M) SapUserRoles (M) ←→ (1) SapRoles
+Systems (1) ←→ (M) V_Transactions
+Users (1) ←→ (M) SoxUserViolations (M) ←→ (1) SoxForbiddenCombinations
+SoxForbiddenCombinations (1) ←→ (M) SoxUserViolations
+SoxForbiddenCombinations (M) ←→ (1) SeverityLevel
+SoxForbiddenCombinations (M) ←→ (1) SoDRiskTypes
+"""
+
+### Certification Workflow
+"""
+AuthoirizationCertifications (1) ←→ (M) AuthoirizationCertificationUsers
+AuthoirizationCertifications (1) ←→ (M) AuthoirizationCertificationRolesForUsers
+Users (1) ←→ (M) AuthoirizationCertificationUsers
+SapRoles (1) ←→ (M) AuthoirizationCertificationRolesForUsers
+"""
+
+### Workflow Management
+"""
+WorkflowInstances (1) ←→ (M) WorkflowInstanceSteps
+WorkflowTypes (1) ←→ (M) WorkflowInstances
+WorkflowSteps (1) ←→ (M) WorkflowInstanceSteps
+Users (1) ←→ (M) WorkflowInstances
+"""
+
+## Key Business Rules & Constraints
+
+### Multi-System Identity Management
+- Users can exist across multiple target systems with different UserId values
+- Same username can have different formats across systems (e.g., "JOHN.DOE" in SAP vs "jdoe" in Workday)
+- SystemId determines which target system the user/role/transaction data comes from
+- Cross-system analysis requires joining on username or other identifying fields
+
+### Segregation of Duties (SoD)
+- Users cannot have conflicting role combinations defined in "SoxForbiddenCombinations"
+- Violations are tracked in "SoxUserViolations" with severity levels
+- Mitigation strategies can be applied through "SoxForbiddenCombiantionMitigates"
+- SoD rules can span multiple target systems
+
+### Access Certification
+- Users must be certified for their roles through "AuthoirizationCertifications"
+- Certification campaigns have defined start/end dates and approval workflows
+- Rejected roles are tracked in "AuthoirizationCertificationRejectedRolesStatus"
+- Certifications can cover multiple target systems
+
+### Role Management
+- Roles have hierarchical relationships through "ChildRoles"
+- Role changes are tracked in "Role_Changes" and "RoleHistory"
+- Role assignments have time-based validity through "SapUserRoles.RoleUntilDate"
+- Roles are system-specific but can have cross-system implications
+
+### Workflow Management
+- Workflows have defined steps and approval processes
+- Role-based access controls apply to workflow participation
+- Escalation rules can be configured for workflow steps
+- Workflows can span multiple target systems
 
 
-## Pathlock Cloud Access Reports - Data Model Analysis 
+## Common Query Patterns
 
-### Core Data Model Overview
+### Multi-System Queries
 
-The Access reports are built around a **multi-system GRC platform** that connects to and pulls data from various target systems (SAP, Workday, etc.). Each SystemId represents a specific target system instance that Pathlock is monitoring.
-
-#### 1. **Systems** (Systems table)
-**Purpose**: Represents target systems that Pathlock connects to and monitors
-
-**Key Fields**:
-- SystemId (BigInt, PK) - Unique system identifier
-- SystemDescription (VarChar) - System name/description
-- CustomerId (BigInt) - Customer identifier
-- SystemType (VarChar) - Type of system (SAP, Workday, etc.)
-- HideLastLogonDate (Bit) - Privacy setting for logon data
-
-**Examples**:
-- SystemId: 1, Description: "SAP Production - Company A"
-- SystemId: 2, Description: "SAP Development - Company A" 
-- SystemId: 3, Description: "Workday HR - Company A"
-- SystemId: 4, Description: "SAP Production - Company B"
-
-#### 2. **Users** (V_Users view)
-**Purpose**: Users from the target systems (SAP users, Workday users, etc.)
-
-**Key Fields**:
-- UserId (BigInt, PK) - Unique user identifier within Pathlock
-- SapUserName (VarChar) - Username in the target system
-- WindowsUserName (VarChar) - Windows/AD username
-- FullName (NVarChar) - Display name
-- EMail (VarChar) - Email address
-- SystemId (BigInt) - **Which target system this user belongs to**
-- IsDeleted (Bit) - Soft delete flag
-- EmployeeNumber (VarChar) - HR employee ID
-- MainApplicationArea (VarChar) - Primary module in target system
-- UserGroup (VarChar) - User group in target system
-- LastLogon (DateTime) - Last login timestamp in target system
-
-**Multi-System Context**:
-- Same person could have different UserId values across different target systems
-- SapUserName could be "JOHN.DOE" in SAP Production but "jdoe" in Workday
-- SystemId determines which target system the user data comes from
-
-#### 3. **Roles** (V_Roles view)
-**Purpose**: Roles from target systems (SAP roles, Workday roles, etc.)
-
-**Key Fields**:
-- RoleId (BigInt, PK) - Unique role identifier within Pathlock
-- RoleName (VarChar) - Role name in the target system
-- SystemId (BigInt) - **Which target system this role belongs to**
-- Description (NVarChar) - Role description
-- TotalActivities (BigInt) - Number of transactions/activities
-- ContainAllTcodes (Bit) - Wildcard role flag (SAP-specific)
-- IsRoleDeleted (Bit) - Soft delete flag
-- CriticalRole (Bit) - High-risk role flag
-
-**Multi-System Context**:
-- Same role name could exist in multiple target systems with different RoleId
-- SAP roles have ContainAllTcodes flag, Workday roles might not
-- Role structure varies by target system type
-
-#### 4. **Activities/Transactions** (V_Transactions view)
-**Purpose**: Activities/transactions from target systems (SAP T-codes, Workday actions, etc.)
-
-**Key Fields**:
-- TransactionId (Decimal, PK) - Unique transaction identifier within Pathlock
-- TransactionCode (NVarChar) - Code in target system (SAP T-code, Workday action ID)
-- TransactionDesc (VarChar) - Description
-- ApplicationArea (VarChar) - Module/area in target system
-- SystemId (BigInt) - **Which target system this transaction belongs to**
-- IsSapCritical (Int) - Risk level flag (SAP-specific)
-- SoxAction (Int) - SOX compliance flag
-- IsTransactionDeleted (Bit) - Soft delete flag
-
-**Multi-System Context**:
-- SAP: TransactionCode = T-code (e.g., "SU01", "PFCG")
-- Workday: TransactionCode = Action ID (e.g., "View_Employee_Data")
-- Different systems have different activity structures
-
-### Updated Common Data Retrieval Patterns
-
-#### **Get Users from Specific Target System**
-\`\`\`sql
+#### Get Users from Specific Target System
+"""sql
 SELECT u.SapUserName, u.FullName, u.EMail, s.SystemDescription
-FROM V_Users u
+FROM Users u
 JOIN Systems s ON u.SystemId = s.SystemId
 WHERE s.SystemId = @SystemId AND u.IsDeleted = 0
-\`\`\`
+"""
 
-#### **Get Users Across All Target Systems**
-\`\`\`sql
+#### Get Users Across All Target Systems
+"""sql
 SELECT u.SapUserName, u.FullName, u.EMail, s.SystemDescription
-FROM V_Users u
+FROM Users u
 JOIN Systems s ON u.SystemId = s.SystemId
 WHERE s.CustomerId = @CustomerId AND u.IsDeleted = 0
-\`\`\`
+"""
 
-#### **Get User's Roles from Specific Target System**
-\`\`\`sql
+#### Get User's Roles from Specific Target System
+"""sql
 SELECT r.RoleName, r.Description, r.CriticalRole, s.SystemDescription
-FROM V_Users u
+FROM Users u
 JOIN SapUserRoles sur ON u.UserId = sur.UserId
-JOIN V_Roles r ON sur.RoleName = r.RoleName AND u.SystemId = r.SystemId
+JOIN SapRoles r ON sur.RoleName = r.RoleName AND u.SystemId = r.SystemId
 JOIN Systems s ON u.SystemId = s.SystemId
 WHERE u.UserId = @UserId AND u.SystemId = @SystemId
-\`\`\`
+"""
 
-#### **Get All Activities from SAP Systems Only**
-\`\`\`sql
+#### Get All Activities from SAP Systems Only
+"""sql
 SELECT t.TransactionCode, t.TransactionDesc, s.SystemDescription
 FROM V_Transactions t
 JOIN Systems s ON t.SystemId = s.SystemId
 WHERE s.SystemType = 'SAP' AND t.IsTransactionDeleted = 0
-\`\`\`
+"""
 
-#### **Cross-System User Analysis**
-\`\`\`sql
+#### Cross-System User Analysis
+"""sql
 -- Find users who exist in multiple target systems
 SELECT u1.SapUserName, u1.FullName, 
        s1.SystemDescription as System1,
        s2.SystemDescription as System2
-FROM V_Users u1
-JOIN V_Users u2 ON u1.SapUserName = u2.SapUserName AND u1.SystemId <> u2.SystemId
+FROM Users u1
+JOIN Users u2 ON u1.SapUserName = u2.SapUserName AND u1.SystemId <> u2.SystemId
 JOIN Systems s1 ON u1.SystemId = s1.SystemId
 JOIN Systems s2 ON u2.SystemId = s2.SystemId
 WHERE u1.IsDeleted = 0 AND u2.IsDeleted = 0
-\`\`\`
+"""
+
+### Compliance Analysis
+- User violation counts by department and system
+- Critical violation identification across all systems
+- Compliance percentage calculations by system
+- Violation trend analysis across target systems
+
+### Access Management
+- User-role assignment analysis by system
+- Role usage statistics across systems
+- Access review status tracking
+- Certification campaign progress
+
+### Risk Assessment
+- Severity-based violation ranking
+- Departmental risk comparison across systems
+- Business process conflict analysis
+- Mitigation effectiveness tracking
+
+## Integration Points
+
+### External Systems
+- SAP systems for role and user data
+- Workday for HR and user data
+- Active Directory for user authentication
+- Other enterprise systems as configured
+
+### API Endpoints
+- User management APIs
+- Violation reporting APIs
+- Certification workflow APIs
+- Analytics and reporting APIs
+- Multi-system data aggregation APIs
+
+---
+
+*This comprehensive schema documentation provides a unified overview of the Pathlock Cloud Identity Manager database structure, incorporating both single-system and multi-system architecture considerations for optimal LLM consumption and understanding.*
+
 
 ### High-Level Logic Explanation
 
