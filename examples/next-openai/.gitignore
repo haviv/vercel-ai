@@ -37,3 +37,8 @@ next-env.d.ts
 # persistence
 .chats
 .streams
+
+# binaries and executables
+bin/
+*.exe
+MssqlMcp
