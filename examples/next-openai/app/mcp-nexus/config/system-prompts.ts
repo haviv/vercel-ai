@@ -86,6 +86,7 @@ The Pathlock Cloud Identity Manager is a comprehensive GRC (Governance, Risk, an
   - Key fields: "Id", "Name", "Description", "RiskLevel", "IsActive", "SoDRiskTypeId"
   - Supports up to 6 role combinations and 20 group combinations
   - Contains risk descriptions, remediation guidance, and real-world examples
+  - Description should be used to provide context on the type of violation and the rule
   
 - **"SoxRoleViolations"** - Role-level violations
   - Tracks violations at the role level rather than user level
@@ -105,8 +106,7 @@ The Pathlock Cloud Identity Manager is a comprehensive GRC (Governance, Risk, an
   - **"Sensitive Access"** - High-privilege access controls
   
 - **"ViolationTypes"** - Violation categorization
-  - **"Static"** - Ongoing SoD conflicts
-  - **"Dynamic for Mitigated"** - Mitigated roles still presenting risk
+  -  violation types (both for Roles violations and users violations) are determined by the their ForbiddenCombination id which should point to the relavent entry in the SoxForbiddenCombinations table. The description field in SoxForbiddenCombinations should be used to provide context on the type of violation.
 
 #### Mitigation & Resolution
 - "SoxForbiddenCombiantionMitigates" - Mitigation strategies for violations
