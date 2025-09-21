@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  nextjs-app:
+    build:
+      context: ../../../  # Build from the workspace root
+      dockerfile: examples/next-openai/Dockerfile
+    container_name: mcp-nexus-app
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount the source code for hot reloading
+      - ../../../:/app
+      - /app/node_modules
+      # Mount environment file
+      - ./.env:/app/examples/next-openai/.env:ro
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true  # For file watching in Docker
+    working_dir: /app/examples/next-openai
+    command: pnpm dev
+    restart: unless-stopped
+    networks:
+      - mcp-network
+
+  # Optional: SQL Server for development
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mcp-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - mcp-network
+    restart: unless-stopped
+
+networks:
+  mcp-network:
+    driver: bridge
+
+volumes:
+  sqlserver_data:
