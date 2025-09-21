@@ -1,9 +1,9 @@
 export const mcpConfig = {
   mssql: {
-    command: '/Users/havivrosh/work/SQL-AI-samples/MssqlMcp/dotnet/MssqlMcp/bin/Debug/net9.0/MssqlMcp',
+    command: process.env.MCP_SQL_COMMAND || '/path/to/MssqlMcp',
     args: [] as string[],
     env: {
-      CONNECTION_STRING: "Server=localhost;Initial Catalog=profiletailor;TrustServerCertificate=True;Pooling=True;User ID=SA;Password=YourStrong!Passw0rd;",
+      CONNECTION_STRING: process.env.MCP_CONNECTION_STRING || "",
       LOGGING__LOGLEVEL__DEFAULT: "Error",
       LOGGING__LOGLEVEL__MICROSOFT: "Error",
       LOGGING__LOGLEVEL__SYSTEM: "Error",
@@ -11,7 +11,7 @@ export const mcpConfig = {
     }
   },
   nexus: {
-    url: 'http://localhost:3000/mcp-nexus/server'
+    url: process.env.MCP_NEXUS_URL || 'http://localhost:3000/mcp-nexus/server'
   },
   settings: {
     maxSteps: 10
