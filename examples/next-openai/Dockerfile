@@ -4,25 +4,17 @@ FROM node:20-alpine AS base
 # Install pnpm
 RUN npm install -g pnpm
 
-# Set working directory
+# Set working directory to the workspace root
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY package.json ./
-COPY pnpm-lock.yaml* ./
+# Copy the entire workspace
+COPY . .
 
-# Install dependencies (this will fail initially due to workspace setup)
-# We'll handle workspace dependencies differently
-RUN apk add --no-cache git
+# Install dependencies
+RUN pnpm install
 
-# Copy the entire workspace context
-COPY . ./
-
-# Development stage
-FROM base AS development
-
-# Set the working directory to the Next.js app
-WORKDIR /app
+# Set working directory to the Next.js app
+WORKDIR /app/examples/next-openai
 
 # Expose port 3000
 EXPOSE 3000
