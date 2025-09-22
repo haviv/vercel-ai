@@ -5,7 +5,7 @@ services:
       dockerfile: examples/next-openai/Dockerfile
     container_name: mcp-nexus-app
     ports:
-      - "3000:3000"
+      - "3001:3000"  # External port 3001, internal port 3000
     volumes:
       # Mount the source code for hot reloading
       - ../../../ai:/app
@@ -32,7 +32,7 @@ services:
       - SA_PASSWORD=YourStrong!Passw0rd
       - MSSQL_PID=Express
     ports:
-      - "1434:1433"  # Use port 1434 instead of 1433
+      - "1433:1433"  
     volumes:
       - sqlserver_data:/var/opt/mssql
     networks:

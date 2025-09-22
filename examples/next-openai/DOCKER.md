@@ -24,7 +24,7 @@ This directory contains Docker configuration to run the MCP Nexus Next.js applic
 
 ## Services
 
-- **nextjs-app**: The Next.js application running on port 3000
+- **nextjs-app**: The Next.js application running on port 3001
 - **sqlserver**: Microsoft SQL Server Express on port 1433 (optional)
 
 ## Environment Variables
@@ -49,8 +49,8 @@ The Docker setup uses the `.env` file in this directory. Key variables:
    ```
 
 3. **Access the application:**
-   - Next.js App: http://localhost:3000
-   - MCP Nexus: http://localhost:3000/mcp-nexus
+   - Next.js App: http://localhost:3001
+   - MCP Nexus: http://localhost:3001/mcp-nexus
 
 4. **Stop the environment:**
    ```bash
@@ -85,8 +85,8 @@ If you enable the SQL Server container, you can connect using:
 
 ### Port Already in Use
 ```bash
-# Kill processes using port 3000
-lsof -ti:3000 | xargs kill -9
+# Kill processes using port 3001
+lsof -ti:3001 | xargs kill -9
 ```
 
 ### Container Issues
