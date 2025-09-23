@@ -7,14 +7,21 @@ RUN npm install -g pnpm
 # Set working directory to the workspace root
 WORKDIR /app
 
-# Copy the entire workspace
+# Copy the entire workspace (excluding node_modules via .dockerignore)
 COPY . .
 
-# Install dependencies
+# Clean all node_modules and install dependencies
+RUN find . -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || true
 RUN pnpm install
+
+# Install the required packages using pnpm in the root monorepo folder
+RUN pnpm add -w ai @ai-sdk/openai @ai-sdk/react @ai-sdk/rsc mermaid @types/mermaid 
 
 # Set working directory to the Next.js app
 WORKDIR /app/examples/next-openai
+
+# Install dependencies for the Next.js app
+RUN pnpm install
 
 # Build the application
 RUN pnpm build

@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/mcp-nexus';
@@ -30,11 +30,11 @@ export default function LoginPage() {
       });
 
       console.log('Login response status:', response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('Login successful:', data);
-        
+
         // Force a page reload to ensure middleware runs
         window.location.href = redirectUrl;
       } else {
@@ -61,7 +61,7 @@ export default function LoginPage() {
             Access the AI SDK examples and demos
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
@@ -112,5 +112,13 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
