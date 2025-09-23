@@ -9,7 +9,6 @@ WORKDIR /app
 
 # Copy the entire workspace (excluding node_modules via .dockerignore)
 COPY . .
-COPY .env.production .env
 # Clean all node_modules and install dependencies
 # RUN find . -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || true
 RUN pnpm install
