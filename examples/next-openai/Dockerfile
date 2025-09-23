@@ -11,7 +11,7 @@ WORKDIR /app
 COPY . .
 
 # Clean all node_modules and install dependencies
-RUN find . -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || true
+# RUN find . -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || true
 RUN pnpm install
 
 # Install the required packages using pnpm in the root monorepo folder
