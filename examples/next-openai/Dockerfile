@@ -15,7 +15,8 @@ COPY . .
 RUN pnpm install
 
 # Install the required packages using pnpm in the root monorepo folder
-RUN pnpm add -w ai @ai-sdk/openai @ai-sdk/react @ai-sdk/rsc mermaid @types/mermaid 
+RUN pnpm build --filter @ai-sdk/react
+RUN pnpm build --filter @ai-sdk/openai
 
 # Set working directory to the Next.js app
 WORKDIR /app/examples/next-openai
