@@ -1,4 +1,6 @@
 import './globals.css';
+import { AuthProvider } from '@/contexts/AuthContext';
+import LogoutButton from '@/component/logout-button';
 
 export const metadata = {
   title: 'AI SDK - Next.js OpenAI Examples',
@@ -12,7 +14,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          <LogoutButton />
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }
