@@ -3,12 +3,12 @@
     {
       "id": 1,
       "username": "admin",
-      "password": "$2b$12$0iWdSu.V1k.X1vVJBsP40OlqYGD/g3fW8GWSNFZDe3ho8J.PEWiyC"
+      "password": "$2b$12$nBuBl3sRebURUdHvvCHqCeWh5o3mcjPPUCH/jKeSmBDF6tZ2KH/FC"
     },
     {
       "id": 2,
       "username": "demo",
-      "password": "$2b$12$pkwla4DjJj5KBoz3/2g5U.IrVT8yLY0g2S6WTRWYA2jdmTk83CiNq"
+      "password": "$2b$12$GxqHy9Fc.FyObGcoepw6/uVcg634Q7drMo3Qa9ceQEpOpZ0h9JgMG"
     }
   ]
 }
