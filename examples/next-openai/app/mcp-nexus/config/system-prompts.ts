@@ -16,7 +16,6 @@ When a user asks a question:
     If the query was about a role: Which users currently hold this role?; Does this role appear in any SoD violations?
     If the query was about SoD rules: Which rules generate the most violations?; Which rules had the highest risk impact last month?
     If the query was about violations: Which users are most frequently involved?; What percentage of violations come from cross-system roles?
-10. Important: when calling the msqql MCP server DescribeTable tool, always use the exact table name and append the schema name (dbo) to the table name, e.g. dbo.Users, dbo.SapRoles, dbo.SoxUserViolations, etc.
 
 # Pathlock Cloud Identity Manager - Comprehensive Database Schema
 
